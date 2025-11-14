@@ -1,0 +1,176 @@
+{
+  "name": "Exercício 02 - Gerador de Figurinha (Evolution API) - FINAL (Code)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "whatsapp-in",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        304,
+        112
+      ],
+      "id": "webhook_trigger",
+      "name": "Webhook (WhatsApp Message)"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.data.message.imageMessage }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "object",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "id": "image_check"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Imagem"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        560,
+        112
+      ],
+      "id": "switch_filter_image",
+      "name": "Switch (Filter Image)"
+    },
+    {
+      "parameters": {
+        "url": "{{ $json.body.data.message.imageMessage.url }}",
+        "authentication": "none",
+        "options": {
+          "requestMethod": "GET",
+          "responseFormat": "binary"
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        848,
+        112
+      ],
+      "id": "http_download_image",
+      "name": "HTTP Request (Download Image)"
+    },
+    {
+      "parameters": {
+        "functionCode": "const binaryData = $input.first().getBinaryData('data');\nconst base64String = binaryData.toString('base64');\n\nreturn [{\n  json: {\n    base64: base64String\n  },\n  binary: {\n    data: binaryData\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1136,
+        112
+      ],
+      "id": "code_to_base64",
+      "name": "Code (Binary to Base64)"
+    },
+    {
+      "parameters": {
+        "url": "http://evolution-api:8080/message/sendSticker/n8n",
+        "authentication": "none",
+        "options": {
+          "requestMethod": "POST",
+          "bodyContentType": "json",
+          "jsonBody": "{\n  \"number\": \"{{ $json.body.data.key.remoteJid }}\",\n  \"sticker\": \"{{ $json.base64 }}\",\n  \"isSticker\": true\n}",
+          "sendHeaders": true,
+          "headerParameters": [
+            {
+              "name": "apikey",
+              "value": "0R10NdrAfl2sc3IozIarMSCG"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        1424,
+        112
+      ],
+      "id": "http_send_sticker",
+      "name": "HTTP Request (Send Sticker)"
+    }
+  ],
+  "connections": {
+    "Webhook (WhatsApp Message)": {
+      "main": [
+        [
+          {
+            "node": "Switch (Filter Image)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch (Filter Image)": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request (Download Image)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request (Download Image)": {
+      "main": [
+        [
+          {
+            "node": "Code (Binary to Base64)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code (Binary to Base64)": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request (Send Sticker)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "f6e2df48-2b97-4d27-b67c-c97978335c34",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "17576d04a48f54985c12ebc1d2b2cfafcb6d27445b37136e1fd9c012527b9a9e"
+  },
+  "id": "LbdHGJ8RA85oD8LW",
+  "tags": []
+}
